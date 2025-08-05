@@ -10,4 +10,8 @@ def get_number(text: str) -> int:
     """
     import re
     match = re.search(r'\d+', text)
+    #consider if  use 1.300 must be 1300
+    if match and ('.' in text):
+        text = text.replace('.', '')
+        match = re.search(r'\d+', text)
     return int(match.group()) if match else 0

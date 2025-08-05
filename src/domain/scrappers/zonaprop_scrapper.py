@@ -35,6 +35,7 @@ class ZonaPropScrapper(BaseScrapper):
                 title= self.get_title(card),
                 url=self.get_department_url(card),
                 price=self.get_department_price(card)[0],
+                expenses= self.get_department_expenses(card),
                 is_usd=self.get_department_price(card)[1],
                 location=self.get_department_location(card),
                 details=self.get_department_details(card)
@@ -42,6 +43,13 @@ class ZonaPropScrapper(BaseScrapper):
             departments.append(dep)
 
         return departments
+    
+    def get_department_expenses(self, card) -> int:
+        """Extrae los gastos del departamento de una tarjeta"""
+        expenses_element = card.find('div', 'postingPrices-module__expenses postingPrices-module__expenses-property-listing')
+        expenses_text = expenses_element.text.strip() if expenses_element else "0"
+        expenses = get_number(expenses_text)
+        return expenses
 
     def get_department_details(self, card) -> DeptDetails:
         """Extrae los detalles del departamento de una tarjeta"""
