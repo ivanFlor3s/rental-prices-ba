@@ -6,8 +6,10 @@ class BaseScrapper(ABC):
         self.url = url
 
     @abstractmethod
-    def get_departments(self):
+    def process_page(self):
         pass
+
     @abstractmethod
-    def where_i_am(self) -> str:
+    def get_soup(self):
         pass
+  

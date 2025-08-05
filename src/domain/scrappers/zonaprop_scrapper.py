@@ -101,6 +101,4 @@ class ZonaPropScrapper(BaseScrapper):
         container = card.find('div','postingCardLayout-module__posting-card-layout')
         return "https://www.zonaprop.com.ar" + container['data-to-posting'] if container else ""
     
-    def where_i_am(self) -> str:
-        # Implementación específica para ZonaProp
-        pass
+  
