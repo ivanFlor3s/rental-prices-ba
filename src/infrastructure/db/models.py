@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey, Column, Integer, String, Text, DECIMAL, Boolean, DateTime, CheckConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from datetime import datetime, timezone 
 from .session import Base
 
@@ -15,8 +15,8 @@ class DepartmentModel(Base):
     
     # Ubicación
     neighborhood_id = Column(Integer, ForeignKey('neighborhoods.id'))
-    neighborhood = relationship("NeighborhoodModel", back_populates="departments")
-    
+    neighborhood = relationship("NeighborhoodModel", backref="departments")
+
     # Características básicas
     property_type = Column(String(50))
     rooms = Column(Integer)
@@ -54,5 +54,3 @@ class NeighborhoodModel(Base):
     __tablename__ = 'neighborhoods'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
-        
-    departments = relationship("DepartmentModel", back_populates="neighborhoods")
