@@ -3,18 +3,23 @@ from src.domain.scrappers.scrapper_base import BaseScrapper
 from src.infrastructure.logging.config import logger
 from src.domain.entities.dapartment import Department, DeptDetails
 from src.utils.get_number import get_number
+from src.utils.text_matcher import text_match_score
 import cloudscraper
 
 class ZonaPropScrapper(BaseScrapper):
 
     scraper = cloudscraper.create_scraper() 
     soup = None
-    def __init__(self, url: str):
+    def __init__(self, url: str, neighborhood: str):
         super().__init__(url)
+        self.neighborhood = neighborhood
 
     def process_page(self):
         """Procesa la página web y extrae la información relevante"""
         self.soup = self.get_soup()
+        if not self.check_valid_search():
+            logger.error("La búsqueda no es válida, no se encontró el barrio en la página")
+            return []
         departments_info = self.get_departments()
         return departments_info
 
@@ -25,6 +30,26 @@ class ZonaPropScrapper(BaseScrapper):
         soup = BeautifulSoup(response.text, 'html.parser')
 
         return soup
+    
+    def check_valid_search(self) -> bool:
+        """Verifica si la búsqueda es válida, en zona prop asumimos 
+        que ocurre cuando el barrio por el que buscamos se setea en el input del buscador
+        Ademas coincide con el nombre de la busqueda en la URL"""
+        
+        search_component = self.soup.find('div', id='search-location-input')
+        if not search_component:
+            logger.error("No se encontró el componente de búsqueda en la página")
+            return False
+        search_text = search_component.find('li','createPills-module__tag').find('p').text.strip() if search_component.find('li','createPills-module__tag') else None
+        if not search_text:
+            logger.error("No se encontró el texto de búsqueda en la página")
+            return False
+        
+        if text_match_score(search_text, self.neighborhood) < 0.7:
+            logger.error(f"El barrio buscado '{self.neighborhood}' no coincide con el texto de búsqueda encontrado '{search_text}'")
+            return False
+
+        return True
 
     def get_departments(self) -> list[Department] :
         """Extrae los departamentos de la página web"""

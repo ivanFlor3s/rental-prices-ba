@@ -5,19 +5,23 @@ from src.application.use_cases.department_use_cases import create_department_fro
 from src.domain.scrappers.zonaprop_scrapper import ZonaPropScrapper
 from src.domain.scrappers.scrap_url_builder import ZonaPropUrlBuilder
 from src.infrastructure.logging.config import logger
+from src.infrastructure.logging.scrapping_logger import ScrappingResultLogger
 from src.infrastructure.db.models import NeighborhoodModel
 from src.infrastructure.repositories.neighborhood_repository import NeighborhoodRepository
 from src.domain.entities.scrapping_result import NeighborhoodScrappingResult, ScrappingBatchResult
+from src.utils.normalizers import normalized_neighborhood_name
 
 
 def scrap_map_save_for(neighborhood: NeighborhoodModel) -> NeighborhoodScrappingResult:
     """Scrap and save departments for a specific neighborhood."""
-    url = init_url_to_scrap(neighborhood.name)
+    normalized_name = normalized_neighborhood_name(neighborhood.name)
+    url = init_url_to_scrap(normalized_name)
     result = NeighborhoodScrappingResult(
         neighborhood_id=neighborhood.id,
         neighborhood_name=neighborhood.name,
         url=url,
-        success=False
+        success=False,
+        titles=[],
     )
     
     session = None
@@ -26,17 +30,18 @@ def scrap_map_save_for(neighborhood: NeighborhoodModel) -> NeighborhoodScrapping
         session = Session(engine)
       
         # Init scrapper
-        scrapper = ZonaPropScrapper(url)
+        scrapper = ZonaPropScrapper(url, neighborhood=normalized_name)
         logger.info(f"Scrapper initialized for {neighborhood.name} with URL: {url}")
 
         # Process page and get departments
         departments = scrapper.process_page()
-        logger.info(f"Found {len(departments)} departments for {neighborhood.name}")
+        
+        result.titles = [dept.title for dept in departments]
 
         # Save departments
         departments_saved = 0
         for dept in departments:
-            create_department_from_scrapping("zonaprop", neighborhood_id=neighborhood.id, department=dept, session=session)
+            #create_department_from_scrapping("zonaprop", neighborhood_id=neighborhood.id, department=dept, session=session)
             departments_saved += 1
             logger.info(f"Department saved for {neighborhood.name}", department=dept)
 
@@ -111,14 +116,12 @@ def scrap_map_save() -> ScrappingBatchResult:
     
     batch_result.end_time = datetime.now()
     
+    # Save results to log file
+    result_logger = ScrappingResultLogger()
+    result_logger.log_batch_result(batch_result)
+    
     # Log summary
     logger.info("Scrapping process completed!")
     logger.info(batch_result.get_summary())
-    
-    # Log detailed results
-    if batch_result.failed_results:
-        logger.warning("Failed neighborhoods:")
-        for failed in batch_result.failed_results:
-            logger.warning(f"- {failed.neighborhood_name} ({failed.url}): {failed.error_message}")
     
     return batch_result

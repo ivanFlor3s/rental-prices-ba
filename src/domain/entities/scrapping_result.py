@@ -9,6 +9,7 @@ class NeighborhoodScrappingResult:
     neighborhood_id: int
     neighborhood_name: str
     url: str
+    titles: List[str]
     success: bool
     departments_count: int = 0
     error_message: Optional[str] = None
