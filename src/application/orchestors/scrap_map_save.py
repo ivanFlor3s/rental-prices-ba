@@ -41,7 +41,7 @@ def scrap_map_save_for(neighborhood: NeighborhoodModel) -> NeighborhoodScrapping
         # Save departments
         departments_saved = 0
         for dept in departments:
-            #create_department_from_scrapping("zonaprop", neighborhood_id=neighborhood.id, department=dept, session=session)
+            create_department_from_scrapping("zonaprop", neighborhood_id=neighborhood.id, department=dept, session=session)
             departments_saved += 1
             logger.info(f"Department saved for {neighborhood.name}", department=dept)
 
@@ -122,6 +122,5 @@ def scrap_map_save() -> ScrappingBatchResult:
     
     # Log summary
     logger.info("Scrapping process completed!")
-    logger.info(batch_result.get_summary())
     
     return batch_result

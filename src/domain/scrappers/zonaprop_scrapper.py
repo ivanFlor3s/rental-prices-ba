@@ -26,7 +26,6 @@ class ZonaPropScrapper(BaseScrapper):
     def get_soup(self):
         """Obtiene el objeto BeautifulSoup de la página web"""
         response = self.scraper.get(self.url)
-        logger.info("estado de la respuesta: %s", response.status_code)
         soup = BeautifulSoup(response.text, 'html.parser')
 
         return soup
