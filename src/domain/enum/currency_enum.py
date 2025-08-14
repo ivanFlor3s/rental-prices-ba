@@ -1,5 +1,5 @@
 from enum import StrEnum
 
-class CurrencyName(StrEnum):
+class Currency(StrEnum):
     ARS = "ARS"
     USD = "USD"

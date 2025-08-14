@@ -1,4 +1,5 @@
 
+from src.application.orchestors.scrap_map_save import scrap_map_save
 from src.infrastructure.logging.config import logger
 from src.domain.scrappers.zonaprop_scrapper import ZonaPropScrapper
 import sys
@@ -11,13 +12,7 @@ def run_api_server():
 
 def main():
     """Función principal del script"""
-    logger.info("Ejecutando script principal...")
-
-    scrapper = ZonaPropScrapper("https://www.zonaprop.com.ar/departamentos-alquiler-capital-federal.html")
-    departments = scrapper.process_page()
-    for dept in departments:
-        logger.info("department_info", dapartment=dept)
-    pass
+    scrap_map_save()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "api":
