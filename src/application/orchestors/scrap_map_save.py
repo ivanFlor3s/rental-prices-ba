@@ -10,6 +10,7 @@ from src.infrastructure.db.models import NeighborhoodModel
 from src.infrastructure.repositories.neighborhood_repository import NeighborhoodRepository
 from src.domain.entities.scrapping_result import NeighborhoodScrappingResult, ScrappingBatchResult
 from src.utils.normalizers import normalized_neighborhood_name
+import time, random
 
 
 def scrap_map_save_for(neighborhood: NeighborhoodModel) -> NeighborhoodScrappingResult:
@@ -106,7 +107,7 @@ def scrap_map_save() -> ScrappingBatchResult:
     for neighborhood in neighborhoods:
         logger.info(f"Processing neighborhood: {neighborhood.name}")
         result = scrap_map_save_for(neighborhood)
-        
+        time.sleep(random.uniform(1.5, 4.0)) 
         if result.success:
             batch_result.add_successful_result(result)
             logger.info(f"✅ Successfully scraped {neighborhood.name}: {result.departments_count} departments")
