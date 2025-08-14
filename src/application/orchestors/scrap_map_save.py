@@ -2,6 +2,7 @@ from src.infrastructure.db.session import engine
 from sqlalchemy.orm import Session
 from src.application.use_cases.department_use_cases import create_department_from_scrapping
 from src.domain.scrappers.zonaprop_scrapper import ZonaPropScrapper
+from src.domain.scrappers.scrap_url_builder import ZonaPropUrlBuilder
 from src.infrastructure.logging.config import logger
 from src.infrastructure.repositories.neighborhood_repository import NeighborhoodRepository
 
@@ -40,4 +41,5 @@ def scrap_map_save():
 
 def init_url_to_scrap(neighborhood: str):
     """Initialize the URL to scrap."""
-    return f"https://www.zonaprop.com.ar/departamentos-alquiler-{neighborhood}.html"
+    urlBuilder = ZonaPropUrlBuilder().set_operation("alquiler").set_neighborhood(neighborhood)
+    return urlBuilder.build()
