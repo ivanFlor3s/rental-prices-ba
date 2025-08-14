@@ -85,7 +85,7 @@ class ZonaPropScrapper(BaseScrapper):
         return location_element.text.strip() if location_element else ""
     
     def get_title(self,card) -> str:
-        title_element = card.find('div', 'postingLocations-module__location-address postingLocations-module__location-address-in-listing')
+        title_element = card.find('div', 'postingLocations-module__location-address-in-listing')
         return title_element.text.strip() if title_element else "No title found"
 
     def get_department_price(self, card) -> tuple[int, bool]:
