@@ -70,7 +70,7 @@ class ZonaPropScrapper(BaseScrapper):
     
     def get_department_expenses(self, card) -> int:
         """Extrae los gastos del departamento de una tarjeta"""
-        expenses_element = card.find('div', 'postingPrices-module__expenses postingPrices-module__expenses-property-listing')
+        expenses_element = card.find('div', 'postingPrices-module__expenses-property-listing')
         expenses_text = expenses_element.text.strip() if expenses_element else "0"
         expenses = get_number(expenses_text)
         return expenses
