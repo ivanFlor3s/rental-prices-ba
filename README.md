@@ -1,29 +1,16 @@
-# Buenos Aires Rental Prices - ETL Project
+# Buenos Aires Rental Prices - Scrapping System
 
-Sistema completo de extracción, transformación y exposición de datos de alquileres en Buenos Aires.
+Sistema completo de scrapping y análisis de precios de alquileres en Buenos Aires con arquitectura limpia y logging avanzado.
 
 ## 🚀 Características
 
--   **Web Scraping**: Extracción automática desde Argenprop (extensible a otras fuentes)
--   **Base de datos**: PostgreSQL con historial de precios y métricas agregadas
+-   **Web Scraping**: Extracción automática desde ZonaProp con rate limiting inteligente
+-   **Arquitectura Limpia**: Separación de responsabilidades con Domain-Driven Design
+-   **Base de datos**: PostgreSQL con Alembic para migraciones
 -   **API REST**: FastAPI con endpoints para consultar datos
--   **ETL Pipeline**: Procesamiento automático de datos
--   **Análisis**: Estadísticas por barrio, tendencias históricas
--   **Scheduler**: Ejecución automática diaria
-
-## 📁 Estructura del Proyecto
-
-```
-rental-prices-ba/
-├── main.py                 # Script principal orquestador
-├── argenprop_scraper.py   # Scraper para Argenprop
-├── database_models.py     # Modelos SQLAlchemy y gestión DB
-├── rental_api.py          # API FastAPI
-├── requirements.txt       # Dependencias Python
-├── .env.example          # Variables de entorno ejemplo
-├── docker-compose.yml    # Docker setup (opcional)
-└── README.md             # Este archivo
-```
+-   **Logging Avanzado**: Sistema de logs detallado con múltiples formatos
+-   **Control de Concurrencia**: Semáforos y delays para evitar bloqueos IP
+-   **Gestión de Barrios**: Sistema completo de neighborhoods con normalización
 
 ## 🛠 Instalación
 
@@ -48,7 +35,7 @@ pip install -r requirements.txt
 #### Opción A: Docker (recomendado)
 
 ```bash
-docker-compose up -d postgres
+docker-compose up -d
 ```
 
 #### Opción B: PostgreSQL local
@@ -68,41 +55,121 @@ cp .env.example .env
 # Editar .env con tus configuraciones
 ```
 
-Archivo `.env`:
+### 4. Ejecutar migraciones
 
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/rentals_db
-SCRAPING_DELAY=2.0
-MAX_PAGES_DEFAULT=5
-API_HOST=0.0.0.0
-API_PORT=8000
-LOG_LEVEL=INFO
+```bash
+# Ejecutar migraciones para crear tablas y seed de barrios
+alembic upgrade head
 ```
 
 ## 🚀 Uso
 
-### 1. Configuración inicial
+### 1. Sistema de Scrapping
 
-```bash
-# Crear tablas en la base de datos
-python main.py --setup-db
+```python
+from src.application.orchestors.scrap_map_save import ScrappingOrchestrator
+
+# Inicializar el orquestador
+orchestrator = ScrappingOrchestrator(min_delay=2.0, max_delay=4.0)
+
+# Scrapear todos los barrios
+result = orchestrator.scrap_all_neighborhoods()
+
+# Scrapear barrios específicos
+result = orchestrator.scrap_specific_neighborhoods(["Palermo", "Recoleta"])
+
+# Ver resumen
+print(result.get_summary())
 ```
 
-### 2. Ejecutar scraping y procesamiento
+### 2. Funciones de compatibilidad
+
+```python
+# Usando las funciones originales (backward compatibility)
+from src.application.orchestors.scrap_map_save import scrap_map_save
+
+result = scrap_map_save()
+```
+
+### 3. Ejecutar API
 
 ```bash
-# Ejecución completa (recomendado para primera vez)
-python main.py --max-pages 10
+# Servidor de desarrollo
+python main.py
 
-# Solo scraping de Argenprop
-python main.py --sources argenprop --max-pages 5
+# O directamente con uvicorn
+uvicorn rental_api:app --host 0.0.0.0 --port 8000 --reload
+```
 
-# Procesar datos existentes sin scraping
+## 📊 API Endpoints
+
+### Endpoints principales:
+
+-   **GET `/`** - Información general de la API
+-   **GET `/health`** - Estado de la aplicación
+-   **GET `/api/departments`** - Listar departamentos con filtros
+-   **GET `/api/departments/{id}`** - Obtener departamento específico
+-   **GET `/api/neighborhoods`** - Listar barrios disponibles
+
+```
+
+### Documentación interactiva:
+
+-   Swagger UI: `http://localhost:8000/docs`
+-   ReDoc: `http://localhost:8000/redoc`
+
+## 🔧 Sistema de Logging
+
+### Logs de Scrapping
+
+El sistema genera logs detallados de cada ejecución de scrapping:
+
+```
+
+logs/
+└── scrapping/
+├── scrapping_result_20250815_143022.log
+├── scrapping_result_20250815_150145.log
+└── scrapping_result_20250815_152330.log
+
+````
+
+Cada archivo contiene:
+
+-   Resumen de ejecución (duración, éxito/fallo)
+-   Detalles por barrio
+-   URLs utilizadas
+-   Errores específicos
+
+### Configuración de Logs
+
+```python
+# Variables de entorno
+SCRAPPING_LOG_DIR=logs/scrapping  # Directorio de logs
+LOG_LEVEL=INFO                    # Nivel de logging
+````
+
+### Mantenimiento de Logs
+
+```python
+from src.application.orchestors.scrap_map_save import ScrappingOrchestrator
+
+orchestrator = ScrappingOrchestrator()
+
+# Limpiar logs antiguos
+orchestrator.cleanup_old_logs(days_to_keep=30)
+
+# Obtener logs recientes
+recent_logs = orchestrator.get_recent_logs(limit=5)
+```
+
 python main.py --skip-scraping
 
 # Exportar datos a CSV
+
 python main.py --export-csv
-```
+
+````
 
 ### 3. Ejecutar API
 
@@ -112,172 +179,194 @@ python main.py api
 
 # O directamente
 uvicorn rental_api:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### 4. Scheduler automático
-
-```bash
-# Ejecutar diariamente (job en background)
-python main.py scheduler
-```
-
-## 📊 API Endpoints
-
-### Endpoints principales:
-
--   **GET `/`** - Información general de la API
--   **GET `/stats`** - Estadísticas generales del sistema
--   **GET `/properties`** - Listar propiedades con filtros
--   **GET `/neighborhoods`** - Estadísticas por barrio
--   **GET `/neighborhoods/{barrio}/history`** - Historial de precios
--   **GET `/neighborhoods/list`** - Lista de barrios disponibles
-
-### Ejemplos de uso:
-
-```bash
-# Estadísticas generales
-curl http://localhost:8000/stats
-
-# Propiedades en Palermo
-curl "http://localhost:8000/properties?neighborhood=Palermo&limit=10"
-
-# Estadísticas por barrio (últimos 30 días)
-curl "http://localhost:8000/neighborhoods?days_back=30"
-
-# Historial de precios de Recoleta
-curl "http://localhost:8000/neighborhoods/Recoleta/history?days_back=90"
-
-# Filtros avanzados
-curl "http://localhost:8000/properties?min_price_usd=500&max_price_usd=1500&min_rooms=2&has_garage=true"
-```
+````
 
 ### Documentación interactiva:
 
 -   Swagger UI: `http://localhost:8000/docs`
 -   ReDoc: `http://localhost:8000/redoc`
 
-## 🔧 Configuración Avanzada
+## 🏗️ Arquitectura y Componentes
 
-### Parámetros del scraper:
+### Capa de Dominio
+
+-   **Entities**: `Department`, `Neighborhood`, `ScrappingResult`
+-   **Enums**: `Currency`, `PropertyType`, `Provider`
+-   **Scrappers**: `ZonaPropScrapper` con URL builder
+
+### Capa de Aplicación
+
+-   **Orquestadores**: `ScrappingOrchestrator` - Control principal del scrapping
+-   **Casos de Uso**: `DepartmentUseCases` - Lógica de negocio
+
+### Capa de Infraestructura
+
+-   **Base de Datos**: SQLAlchemy con Alembic
+-   **Repositorios**: `DepartmentRepository`, `NeighborhoodRepository`
+-   **Logging**: Sistema especializado de logs
+-   **Jobs**: Servicios en background
+
+### Capa de Presentación
+
+-   **API Controllers**: FastAPI endpoints
+-   **Health Checks**: Monitoreo de estado
+
+## 🎯 Enumeraciones Centralizadas
 
 ```python
-# En argenprop_scraper.py
-scraper = ArgenpropScraper(
-    delay_between_requests=2.0,  # Delay entre requests
-    max_retries=3,               # Reintentos en caso de error
-    timeout=10                   # Timeout de requests
-)
+from src.domain.enum import Currency, PropertyType, Provider
+
+# Uso simple en una línea
+currency = Currency.USD
+property_type = PropertyType.DEPARTMENT
+provider = Provider.ZONAPROP
 ```
 
-### Configuración de base de datos:
+## 🗃️ Migraciones con Alembic
+
+### Comandos útiles:
+
+```bash
+# Crear nueva migración
+alembic revision --autogenerate -m "descripcion_del_cambio"
+
+# Aplicar migraciones
+alembic upgrade head
+
+# Ver historial
+alembic history
+
+# Rollback
+alembic downgrade -1
+```
+
+### Barrios Incluidos:
+
+El sistema viene con 48 barrios de Buenos Aires pre-cargados:
+
+-   Palermo, Recoleta, Puerto Madero, Villa Crespo
+-   Belgrano, Caballito, San Telmo, La Boca
+-   Y todos los demás barrios porteños
+
+## 📈 Monitoreo y Análisis
+
+### Logs de Sistema
+
+Los logs del sistema se guardan en diferentes niveles:
+
+```bash
+# Ver logs de scrapping en tiempo real
+tail -f logs/scrapping/scrapping_result_*.log
+
+# Buscar errores específicos
+grep "❌ FAILED" logs/scrapping/*.log
+
+# Analizar tasas de éxito
+grep "Success rate" logs/scrapping/*.log
+```
+
+### Métricas de Scrapping
+
+Cada ejecución genera métricas detalladas:
+
+-   Duración total del proceso
+-   Tasa de éxito por barrio
+-   Cantidad de departamentos encontrados
+-   Errores específicos por URL
+
+### Análisis de Resultados
 
 ```python
-# En database_models.py
-db_manager = DatabaseManager(
-    database_url="postgresql://user:pass@host:port/db"
-)
+from src.application.orchestors.scrap_map_save import ScrappingOrchestrator
+
+orchestrator = ScrappingOrchestrator()
+
+# Ver logs recientes
+recent_logs = orchestrator.get_recent_logs(5)
+
+# Análisis manual de archivos
+for log_file in recent_logs:
+    print(f"Log file: {log_file}")
 ```
 
-## 📈 Monitoreo y Logs
+## 📋 Datos que se Recolectan
 
-Los logs se guardan en `rental_scraper.log` y incluyen:
+### Por Departamento:
 
--   Progreso del scraping
--   Errores y warnings
--   Estadísticas de ejecución
--   Performance metrics
-
-```bash
-# Ver logs en tiempo real
-tail -f rental_scraper.log
-
-# Buscar errores
-grep ERROR rental_scraper.log
-```
-
-## 🐳 Docker (Opcional)
-
-```yaml
-# docker-compose.yml incluido
-version: '3.8'
-services:
-    postgres:
-        image: postgres:13
-        environment:
-            POSTGRES_DB: rentals_db
-            POSTGRES_USER: rental_user
-            POSTGRES_PASSWORD: rental_pass
-        ports:
-            - '5432:5432'
-        volumes:
-            - postgres_data:/var/lib/postgresql/data
-
-    api:
-        build: .
-        ports:
-            - '8000:8000'
-        depends_on:
-            - postgres
-        environment:
-            DATABASE_URL: postgresql://rental_user:rental_pass@postgres:5432/rentals_db
-
-volumes:
-    postgres_data:
-```
-
-```bash
-# Levantar todo con Docker
-docker-compose up -d
-
-# Solo base de datos
-docker-compose up -d postgres
-```
-
-## 📋 Datos que se recolectan
-
-### Por propiedad:
-
--   **Básicos**: Título, descripción, URL, fecha
--   **Ubicación**: Barrio, dirección
--   **Características**: Ambientes, baños, m², tipo
+-   **Básicos**: Título, descripción, URL de origen
+-   **Ubicación**: Barrio (normalizado)
+-   **Características**: Ambientes, baños, m², tipo de propiedad
 -   **Precios**: ARS, USD, expensas
--   **Amenities**: Cochera, balcón, pileta, gym, etc.
+-   **Amenities**: Garage, balcón, amenities varios
+-   **Fechas**: Creación, última actualización
 
-### Métricas agregadas:
+### Resultados de Scrapping:
 
--   Precios promedio/mediano por barrio
--   Precio por m² por zona
--   Cantidad de propiedades activas
--   Tendencias históricas
--   Propiedades nuevas por día
+```python
+# NeighborhoodScrappingResult
+- neighborhood_id, neighborhood_name, url
+- success, departments_count, titles[]
+- error_message, timestamp
 
-## 🔄 Proceso ETL
+# ScrappingBatchResult
+- successful_results[], failed_results[]
+- total_neighborhoods, total_departments_scraped
+- start_time, end_time, success_rate, duration
+```
 
-1. **Extract**: Web scraping desde sitios inmobiliarios
-2. **Transform**: Limpieza y normalización de datos
-3. **Load**: Guardado en PostgreSQL con deduplicación
-4. **Metrics**: Cálculo de estadísticas agregadas
+## 🔄 Proceso de Scrapping
+
+### Flujo Principal:
+
+1. **Inicialización**: `ScrappingOrchestrator` con rate limiting configurado
+2. **Obtención de Barrios**: Query a la DB para obtener neighborhoods
+3. **Normalización**: Conversión de nombres de barrios para URLs
+4. **Scrapping**: `ZonaPropScrapper` procesa cada barrio
+5. **Persistencia**: Guardado en DB con deduplicación
+6. **Logging**: Generación de logs detallados por ejecución
+7. **Rate Limiting**: Delays aleatorios entre 1.5-4.0 segundos
+
+### Arquitectura Resiliente:
+
+-   ✅ Rollback automático en caso de error
+-   ✅ Logs detallados por barrio
+-   ✅ Continuación del proceso aunque falle un barrio
+-   ✅ Gestión de sesiones de DB por barrio
 
 ## 🎯 Roadmap
 
-### Próximas funcionalidades:
+### Funcionalidades Completadas: ✅
 
--   [ ] Scraper para Zonaprop
+-   [x] Arquitectura limpia con DDD
+-   [x] Scrapper para ZonaProp
+-   [x] Sistema de logging avanzado
+-   [x] Migraciones con Alembic
+-   [x] Rate limiting inteligente
+-   [x] Gestión de barrios completa
+-   [x] API REST con FastAPI
+-   [x] Enumeraciones centralizadas
+-   [x] Manejo robusto de errores
+
+### Próximas funcionalidades: 🚧
+
+-   [ ] Sistema asíncrono con semáforos (en progreso)
 -   [ ] Scraper para MercadoLibre
--   [ ] Geocoding automático (lat/lng)
+-   [ ] Scraper para ArgentProp
 -   [ ] Dashboard web con gráficos
+-   [ ] Geocoding automático (lat/lng)
 -   [ ] Predicciones de precios (ML básico)
 -   [ ] Alertas por email/webhook
 -   [ ] Cache con Redis
 -   [ ] Rate limiting en API
 
-### Mejoras técnicas:
+### Mejoras técnicas: 🔧
 
--   [ ] Tests unitarios
+-   [ ] Tests unitarios completos
 -   [ ] CI/CD pipeline
 -   [ ] Monitoreo con Prometheus
--   [ ] Retry logic más robusto
--   [ ] Proxy rotation para scraping
+-   [ ] Proxy rotation para scrapping
+-   [ ] Kubernetes deployment
+-   [ ] Métricas de performance
 
 ## 🤝 Contribuir
 
@@ -297,44 +386,3 @@ MIT License - ver archivo `LICENSE` para detalles.
 -   No sobrecargar servidores (usar delays apropiados)
 -   Uso solo para fines educativos y de investigación
 -   Verificar términos de servicio de cada sitio
-
-## 🆘 Troubleshooting
-
-### Problemas comunes:
-
-**Error de conexión a DB:**
-
-```bash
-# Verificar que PostgreSQL esté corriendo
-sudo systemctl status postgresql
-
-# Verificar conexión
-psql -h localhost -U tu_usuario -d rentals_db
-```
-
-**Scraper bloqueado:**
-
-```bash
-# Aumentar delay entre requests
-python main.py --sources argenprop --max-pages 2
-# Y ajustar delay_between_requests en el código
-```
-
-**API no responde:**
-
-```bash
-# Verificar que el puerto esté libre
-lsof -i :8000
-
-# Reiniciar API
-pkill -f rental_api
-python main.py api
-```
-
-## 📞 Soporte
-
-Para reportar bugs o solicitar funcionalidades, crear un issue en GitHub.
-
----
-
-**Happy coding! 🚀**
