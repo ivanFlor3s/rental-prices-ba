@@ -2,6 +2,7 @@
 from src.application.orchestors.scrap_map_save import scrap_map_save
 from src.infrastructure.logging.config import logger
 from src.domain.scrappers.zonaprop_scrapper import ZonaPropScrapper
+from src.application.orchestors.data_analize import analize_data
 import sys
 
 def run_api_server():
@@ -11,7 +12,8 @@ def run_api_server():
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 
 def main():
-   scrap_map_save()
+   #scrap_map_save()
+   analize_data()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "api":
