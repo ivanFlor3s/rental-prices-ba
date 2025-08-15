@@ -11,8 +11,7 @@ def run_api_server():
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 
 def main():
-    """Función principal del script"""
-    scrap_map_save()
+   scrap_map_save()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "api":

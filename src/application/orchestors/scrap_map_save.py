@@ -210,3 +210,17 @@ class ScrappingOrchestrator:
         delay = random.uniform(self.min_delay, self.max_delay)
         logger.debug(f"Applying rate limiting delay: {delay:.2f}s")
         time.sleep(delay)
+
+
+def scrap_map_save():
+    """Main function to initiate the scrapping process."""
+    orchestrator = ScrappingOrchestrator()
+    
+    # Uncomment the next line to scrap all neighborhoods
+    result = orchestrator.scrap_all_neighborhoods()
+    
+    # Example: scrap specific neighborhoods
+    #neighborhoods_to_scrap = ["Caballito"]
+    #result = orchestrator.scrap_specific_neighborhoods(neighborhoods_to_scrap)
+    
+    return result
