@@ -54,3 +54,9 @@ class NeighborhoodModel(Base):
     __tablename__ = 'neighborhoods'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }

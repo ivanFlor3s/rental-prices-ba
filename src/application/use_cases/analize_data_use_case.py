@@ -50,6 +50,7 @@ def _generate_expenses_by_neighborhood_data(df):
         "x_axis_label": "Amount($)",
         "data": [
             {
+                "neighborhoodId": int(df[df['barrio'] == barrio]['neighborhood_id'].values[0]),
                 "neighborhood": barrio,
                 "average_expenses": float(row['mean']),
                 "average_price": float(df[df['barrio'] == barrio]['price'].mean()),

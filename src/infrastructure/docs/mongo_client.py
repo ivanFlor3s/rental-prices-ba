@@ -19,3 +19,8 @@ class MongoDBClient:
         collection = self.db['reports']
         result = collection.insert_one(report)
         print(f"Documento insertado con id: {result.inserted_id}")
+
+    def insert_neighborhoods(self, neighborhoods):
+        collection = self.db['neighborhoods']
+        result = collection.insert_one(neighborhoods)
+        print(f"Documento insertado con id: {result.inserted_id}")
