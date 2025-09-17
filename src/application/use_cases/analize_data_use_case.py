@@ -1,10 +1,11 @@
 import pandas as pd
 from datetime import datetime
 
+from src.domain.entities.mean_stack_chart import ChartFilters, MeanData, Metadata
 from src.infrastructure.logging.config import logger
 from src.infrastructure.db.session import engine
 
-def analize_data():
+def analize_data(filters: ChartFilters = ChartFilters(rooms=None)) -> dict:
     """
     Analiza los datos de departamentos guardados en la base de datos.
     
@@ -12,7 +13,12 @@ def analize_data():
         dict: Datos de análisis en formato JSON
     """
     sql_sentence = """SELECT d.*, n.name AS barrio FROM departments d 
-                      JOIN neighborhoods n ON n.id = d.neighborhood_id"""
+                      JOIN neighborhoods n ON n.id = d.neighborhood_id
+                      WHERE d.currency_price = 'ARS'"""
+    
+    if(filters.rooms is not None):
+        sql_sentence += f" AND d.rooms = {filters.rooms}"
+
     df = pd.read_sql(sql_sentence, engine)
 
     # Limpiar datos (quitar nulos y convertir a numérico si hace falta)
@@ -20,45 +26,34 @@ def analize_data():
     df["price"] = pd.to_numeric(df["price"], errors="coerce")
     df = df.dropna(subset=["expenses", "price", "barrio"])
 
-    analysis_data = {
-        "metadata": {
-            "generated_at": datetime.now(),
-            "total_departments": len(df),
-            "total_neighborhoods": df['barrio'].nunique(),
-            "analysis_type": "rental_properties_ba"
-        },
-        "charts": {
-            "prices_expenses_by_neighborhood": _generate_expenses_by_neighborhood_data(df),
-            # "expenses_distribution": _generate_expenses_distribution_data(df),
-            # "price_vs_expenses_scatter": _generate_price_vs_expenses_data(df),
-            # "summary_stats": _generate_summary_stats(df)
-        }
-    }
-    return analysis_data
-    
+
+    metadata = Metadata(
+        generatedAt=datetime.now(),
+        totalDepartments=len(df),
+        totalNeighborhoods=df['barrio'].nunique(),
+        analysisType="mean prices",
+    )
+    analysis_data = _generate_expenses_by_neighborhood_data(df)
+
+    return {"data": analysis_data, "metadata": metadata}
 
 
-def _generate_expenses_by_neighborhood_data(df):
+
+def _generate_expenses_by_neighborhood_data(df) -> list[MeanData]:
     """Genera datos para gráfico de barras: Promedio de expensas por barrio."""
     expenses_by_barrio = df.groupby("barrio")["expenses"].agg(['mean', 'count']).round(2)
     expenses_by_barrio = expenses_by_barrio.sort_values('mean')
     
-    return {
-        "chart_type": "StackedBar",
-        "title": "Promedio de expensas por barrio",
-        "y_axis_label": "Barrio",
-        "x_axis_label": "Amount($)",
-        "data": [
-            {
-                "neighborhoodId": int(df[df['barrio'] == barrio]['neighborhood_id'].values[0]),
-                "neighborhood": barrio,
-                "average_expenses": float(row['mean']),
-                "average_price": float(df[df['barrio'] == barrio]['price'].mean()),
-                "count": int(row['count'])
-            }
-            for barrio, row in expenses_by_barrio.iterrows()
-        ]
-    }
+    return [
+        MeanData(
+            neighborhoodId=int(df[df['barrio'] == barrio]['neighborhood_id'].values[0]),
+            neighborhoodName=barrio,
+            averageExpense=int(row['mean']),
+            averagePrice=int(df[df['barrio'] == barrio]['price'].mean()),
+            sample=int(row['count'])
+        )
+        for barrio, row in expenses_by_barrio.iterrows()
+    ]
 
 
 def _generate_expenses_distribution_data(df):
