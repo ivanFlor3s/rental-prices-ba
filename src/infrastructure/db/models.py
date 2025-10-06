@@ -55,6 +55,36 @@ class NeighborhoodModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
 
+    locality_id = Column(Integer, ForeignKey("localities.id"), nullable=True)
+
+    locality = relationship("LocalityModel", back_populates="neighborhoods")
+    
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
+    
+class LocalityModel(Base):
+    __tablename__ = 'localities'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), unique=True, nullable=False)
+
+    neighborhoods = relationship("NeighborhoodModel", back_populates="locality")
+    
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
+
+class ProviderModel(Base):
+    __tablename__ = 'providers'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), unique=True, nullable=False)
+
     def to_dict(self):
         return {
             "id": self.id,
