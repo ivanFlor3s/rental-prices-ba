@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.presentation.controllers import departments, health
+from src.presentation.controllers import departments_controller as departments, health
 
 from contextlib import asynccontextmanager
 from src.infrastructure.jobs.background_service import scheduler
