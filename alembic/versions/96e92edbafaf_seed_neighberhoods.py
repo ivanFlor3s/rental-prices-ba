@@ -11,7 +11,6 @@ from alembic import op
 import sqlalchemy as sa
 
 from sqlalchemy.orm import Session
-from src.infrastructure.db.session import engine
 from src.infrastructure.db.models import NeighborhoodModel
 
 
@@ -75,7 +74,8 @@ neighborhoods = [
 
 def upgrade() -> None:
     """Upgrade schema."""
-    session = Session(bind=engine)
+    bind = op.get_bind()
+    session = Session(bind=bind)
     try:
         for neighborhood_name in neighborhoods:
             # Check if the neighborhood already exists
@@ -95,8 +95,10 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    session = Session(bind=engine)
+    bind = op.get_bind()
+    session = Session(bind=bind)
     try:
+        bind = op.get_bind()
         for neighborhood in neighborhoods:
             # Find the neighborhood by name
             existing_neighborhood = session.query(NeighborhoodModel).filter_by(name=neighborhood).first()
