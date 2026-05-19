@@ -70,15 +70,20 @@ class ZonaPropScrapper(BaseScrapper):
     
     def get_department_expenses(self, card) -> int:
         """Extrae los gastos del departamento de una tarjeta"""
-        expenses_element = card.find('div', 'postingPrices-module__expenses-property-listing')
+        expenses_element = card.find(class_='postingPrices-module__expenses-property-listing')
         expenses_text = expenses_element.text.strip() if expenses_element else "0"
         expenses = get_number(expenses_text)
         return expenses
 
     def get_department_details(self, card) -> DeptDetails:
         """Extrae los detalles del departamento de una tarjeta"""
-        details_element = card.find('h3')
-        details = details_element.find_all('span', 'postingMainFeatures-module__posting-main-features-span postingMainFeatures-module__posting-main-features-listing')
+        details_element = card.find('h3', class_='postingMainFeatures-module__posting-main-features-block')
+        if not details_element:
+            details_element = card.find('h3')
+            
+        details = []
+        if details_element:
+            details = details_element.find_all('span', class_='postingMainFeatures-module__posting-main-features-span')
         
         result: DeptDetails = DeptDetails(
             bedrooms=0,
@@ -105,16 +110,16 @@ class ZonaPropScrapper(BaseScrapper):
 
     def get_department_location(self, card) -> str:
         """Extrae la ubicación del departamento de una tarjeta"""
-        location_element = card.find('h2', 'postingLocations-module__location-text')
+        location_element = card.find(class_='postingLocations-module__location-text')
         return location_element.text.strip() if location_element else ""
     
     def get_title(self,card) -> str:
-        title_element = card.find('div', 'postingLocations-module__location-address-in-listing')
+        title_element = card.find(class_='postingLocations-module__location-address-in-listing')
         return title_element.text.strip() if title_element else "No title found"
 
     def get_department_price(self, card) -> tuple[int, bool]:
         """Extrae el precio del departamento de una tarjeta"""
-        price_element = card.find('div', 'postingPrices-module__price')
+        price_element = card.find(class_='postingPrices-module__price')
         price_text = price_element.text.strip() if price_element else "0"
         is_usd = 'USD' in price_text or '$U' in price_text or 'U$S' in price_text
         price = get_number(price_text)
@@ -122,7 +127,7 @@ class ZonaPropScrapper(BaseScrapper):
   
     def get_department_url(self, card) -> str:
         """Extrae la URL del departamento de una tarjeta"""
-        container = card.find('div','postingCardLayout-module__posting-card-layout')
-        return "https://www.zonaprop.com.ar" + container['data-to-posting'] if container else ""
+        container = card.find(class_='postingCardLayout-module__posting-card-layout')
+        return "https://www.zonaprop.com.ar" + container['data-to-posting'] if container and container.has_attr('data-to-posting') else ""
     
   
