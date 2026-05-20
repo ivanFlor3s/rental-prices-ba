@@ -217,10 +217,10 @@ def scrap_map_save():
     orchestrator = ScrappingOrchestrator()
     
     # Uncomment the next line to scrap all neighborhoods
-    result = orchestrator.scrap_all_neighborhoods()
+    # result = orchestrator.scrap_all_neighborhoods()
     
     # Example: scrap specific neighborhoods
-    #neighborhoods_to_scrap = ["Caballito"]
-    #result = orchestrator.scrap_specific_neighborhoods(neighborhoods_to_scrap)
+    neighborhoods_to_scrap = ["Caballito"]
+    result = orchestrator.scrap_specific_neighborhoods(neighborhoods_to_scrap)
     
     return result

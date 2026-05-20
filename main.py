@@ -7,8 +7,10 @@ import sys
 def run_api_server():
     """Función para ejecutar el servidor API"""
     import uvicorn
+    import os
     from rental_api import app
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
 def main():
    scrap_map_save()
