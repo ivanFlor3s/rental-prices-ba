@@ -2,32 +2,28 @@
 
 ## Construir la imagen
 
-docker build -t rental-prices-api .
+docker build -t rental-prices-scraper .
 
-## Ejecutar solo la API
+## Ejecutar el scrapper sobre todos los barrios
 
-docker run -p 8000:8000 rental-prices-api
+docker run --rm rental-prices-scraper
 
-## Ejecutar con docker-compose
+## Ejecutar barrios específicos
+
+docker run --rm rental-prices-scraper Palermo Recoleta
+
+## Exportar a CSV
+
+docker run --rm rental-prices-scraper --export-csv departments.csv
+
+## Ejecutar con docker-compose (PostgreSQL)
 
 docker-compose up -d
 
-## Ver logs de la API
+## Ver logs de PostgreSQL
 
-docker-compose logs -f rental-api
+docker-compose logs -f postgres
 
 ## Parar los servicios
 
 docker-compose down
-
-## Reconstruir y ejecutar
-
-docker-compose up --build -d
-
-## Ejecutar en modo desarrollo (con logs)
-
-docker-compose up
-
-## Verificar que la API está funcionando
-
-curl http://localhost:8000/health

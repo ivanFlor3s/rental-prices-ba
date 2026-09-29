@@ -30,8 +30,5 @@ RUN adduser --disabled-password --gecos '' appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-# Exponer el puerto 8000
-EXPOSE 8000
-
-# Comando por defecto para ejecutar la aplicación
-CMD ["python", "main.py", "api"]
+# Comando por defecto: ejecutar el scrapper sobre todos los barrios
+CMD ["python", "main.py"]

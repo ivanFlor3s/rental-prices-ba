@@ -1,22 +1,77 @@
-
-from src.application.orchestors.scrap_map_save import scrap_map_save
-from src.infrastructure.logging.config import logger
-from src.domain.scrappers.zonaprop_scrapper import ZonaPropScrapper
+import argparse
 import sys
 
-def run_api_server():
-    """Función para ejecutar el servidor API"""
-    import uvicorn
-    import os
-    from rental_api import app
-    port = int(os.environ.get("PORT", 8001))
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+from src.application.orchestors.scrap_map_save import ScrappingOrchestrator
+from src.application.use_cases.export_csv import export_departments_to_csv
+from src.application.use_cases.scrapper_health import ScrapperHealthCheckUseCase
+from src.infrastructure.logging.config import logger
 
-def main():
-   scrap_map_save()
+
+def run_scraping(neighborhoods: list[str] | None = None):
+    orchestrator = ScrappingOrchestrator()
+
+    if neighborhoods:
+        result = orchestrator.scrap_specific_neighborhoods(neighborhoods)
+    else:
+        result = orchestrator.scrap_all_neighborhoods()
+
+    logger.info(result.get_summary())
+    return result
+
+
+def run_health_check() -> None:
+    report = ScrapperHealthCheckUseCase().check_zonaprop_health()
+    logger.info(
+        "Scrapper health check",
+        source=report["source"],
+        neighborhood_tested=report["neighborhood_tested"],
+        status=report["status"],
+        scraped_items=report["scraped_items"],
+        fields_failing=report["fields_failing"],
+        message=report["message"],
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="rental-prices-ba",
+        description="Scrapper y persistencia de precios de alquileres en Buenos Aires.",
+    )
+    parser.add_argument(
+        "neighborhoods",
+        nargs="*",
+        help="Barrios específicos a scrapear. Si se omite, se scrapean todos.",
+    )
+    parser.add_argument(
+        "--export-csv",
+        metavar="FILE",
+        nargs="?",
+        const="departments.csv",
+        default=None,
+        help="Exporta los departamentos persistidos a CSV (por defecto departments.csv).",
+    )
+    parser.add_argument(
+        "--health",
+        action="store_true",
+        help="Chequea la salud de los selectores DOM del scrapper de ZonaProp.",
+    )
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if args.health:
+        run_health_check()
+        return
+
+    if args.export_csv:
+        export_departments_to_csv(args.export_csv)
+        return
+
+    run_scraping(args.neighborhoods or None)
+
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "api":
-        run_api_server()
-    else:
-        main()
+    main()

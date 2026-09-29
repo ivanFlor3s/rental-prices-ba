@@ -1,11 +1,10 @@
-import logging
-from typing import Dict, Any, List
+from typing import Any, Dict
 
 from src.domain.scrappers.zonaprop_scrapper import ZonaPropScrapper
 from src.domain.scrappers.scrap_url_builder import ZonaPropUrlBuilder
+from src.infrastructure.logging.config import logger
 from src.utils.normalizers import normalized_neighborhood_name
 
-logger = logging.getLogger(__name__)
 
 class ScrapperHealthCheckUseCase:
     """Service to verify the health of the scrapper DOM selectors."""
@@ -39,8 +38,7 @@ class ScrapperHealthCheckUseCase:
             if not departments:
                 health_report["message"] = "No departments returned. Search might be invalid or DOM changed."
                 return health_report
-            
-            # Sample the first few departments
+
             sample = departments[:self.max_samples]
             health_report["scraped_items"] = len(sample)
 
@@ -61,16 +59,14 @@ class ScrapperHealthCheckUseCase:
                     failures["url"] += 1
                 if not dept.location:
                     failures["location"] += 1
-                # The details parsing might be broken if area == 0 across all samples
                 if dept.details.area <= 0:
                     failures["area"] += 1
 
-            failing_fields = []
-            for field, failure_count in failures.items():
-                if failure_count == len(sample):
-                    # If the field failed for ALL samples, it's definitely broken
-                    failing_fields.append(field)
-            
+            failing_fields = [
+                field for field, failure_count in failures.items()
+                if failure_count == len(sample)
+            ]
+
             health_report["fields_failing"] = failing_fields
 
             if not failing_fields:
