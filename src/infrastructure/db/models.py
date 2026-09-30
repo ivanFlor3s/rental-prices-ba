@@ -19,6 +19,7 @@ class DepartmentModel(Base):
 
     # Características básicas
     property_type = Column(String(50))
+    operation = Column(String(20), nullable=False, default='rent')
     rooms = Column(Integer)
     bedrooms = Column(Integer)
     bathrooms = Column(Integer)
@@ -47,6 +48,7 @@ class DepartmentModel(Base):
         CheckConstraint("currency_expenses IN ('ARS', 'USD')"),
         CheckConstraint("source IN ('argenprop', 'zonaprop', 'mercadolibre', 'cabaprop')"),
         CheckConstraint("property_type IN ('department', 'house', 'duplex', 'ph')"),
+        CheckConstraint("operation IN ('rent', 'sale')"),
     )
 
 

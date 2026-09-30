@@ -17,5 +17,6 @@ class Department:
     price: int
     is_usd: bool
     location: str
+    operation: str = "rent"
     expenses: Optional[int] = None
     details: Optional[DeptDetails] = None

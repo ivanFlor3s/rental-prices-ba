@@ -12,6 +12,7 @@ def create_department_from_scrapping(source:str, neighborhood_id: int, departmen
         existing.price = department.price
         existing.currency_price = enum.Currency.USD if department.is_usd else enum.Currency.ARS
         existing.expenses = department.expenses
+        existing.operation = department.operation
         if department.details:
             existing.rooms = department.details.ambientes
             existing.bedrooms = department.details.bedrooms

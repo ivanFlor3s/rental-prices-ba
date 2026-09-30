@@ -9,6 +9,7 @@ from src.infrastructure.logging.scrapping_logger import ScrappingResultLogger
 from src.infrastructure.db.models import NeighborhoodModel
 from src.infrastructure.repositories.neighborhood_repository import NeighborhoodRepository
 from src.domain.entities.scrapping_result import NeighborhoodScrappingResult, ScrappingBatchResult
+from src.domain.enum import OperationType
 from src.utils.normalizers import normalized_neighborhood_name
 import time, random
 
@@ -16,16 +17,18 @@ import time, random
 class ScrappingOrchestrator:
     """Orchestrates the scrapping process for rental properties."""
     
-    def __init__(self, min_delay: float = 1.5, max_delay: float = 4.0):
+    def __init__(self, min_delay: float = 1.5, max_delay: float = 4.0, operation: str = "rent"):
         """
         Initialize the scrapping orchestrator.
         
         Args:
             min_delay: Minimum delay between requests in seconds
             max_delay: Maximum delay between requests in seconds
+            operation: 'rent' or 'sale'
         """
         self.min_delay = min_delay
         self.max_delay = max_delay
+        self.operation = OperationType(operation)
         self.result_logger = ScrappingResultLogger()
     
     def scrap_neighborhood(self, neighborhood: NeighborhoodModel) -> NeighborhoodScrappingResult:
@@ -46,7 +49,7 @@ class ScrappingOrchestrator:
             session = Session(engine)
           
             # Init scrapper
-            scrapper = ZonaPropScrapper(url, neighborhood=normalized_name)
+            scrapper = ZonaPropScrapper(url, neighborhood=normalized_name, operation=self.operation.value)
             logger.info(f"Scrapper initialized for {neighborhood.name} with URL: {url}")
 
             # Process page and get departments
@@ -194,7 +197,7 @@ class ScrappingOrchestrator:
     
     def _build_scrapping_url(self, neighborhood: str) -> str:
         """Build the URL for scrapping a specific neighborhood."""
-        url_builder = ZonaPropUrlBuilder().set_operation("alquiler").set_neighborhood(neighborhood)
+        url_builder = ZonaPropUrlBuilder().set_operation(self.operation.zonaprop_value).set_neighborhood(neighborhood)
         return url_builder.build()
     
     def _get_neighborhoods_to_scrap(self) -> list:

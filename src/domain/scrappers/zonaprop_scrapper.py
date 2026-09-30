@@ -10,9 +10,10 @@ class ZonaPropScrapper(BaseScrapper):
 
     scraper = cloudscraper.create_scraper() 
     soup = None
-    def __init__(self, url: str, neighborhood: str):
+    def __init__(self, url: str, neighborhood: str, operation: str = "rent"):
         super().__init__(url)
         self.neighborhood = neighborhood
+        self.operation = operation
 
     def process_page(self):
         """Procesa la página web y extrae la información relevante"""
@@ -62,7 +63,8 @@ class ZonaPropScrapper(BaseScrapper):
                 expenses= self.get_department_expenses(card),
                 is_usd=self.get_department_price(card)[1],
                 location=self.get_department_location(card),
-                details=self.get_department_details(card)
+                details=self.get_department_details(card),
+                operation=self.operation
             )
             departments.append(dep)
 

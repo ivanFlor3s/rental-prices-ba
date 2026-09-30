@@ -7,8 +7,8 @@ from src.application.use_cases.scrapper_health import ScrapperHealthCheckUseCase
 from src.infrastructure.logging.config import logger
 
 
-def run_scraping(neighborhoods: list[str] | None = None):
-    orchestrator = ScrappingOrchestrator()
+def run_scraping(neighborhoods: list[str] | None = None, operation: str = "rent"):
+    orchestrator = ScrappingOrchestrator(operation=operation)
 
     if neighborhoods:
         result = orchestrator.scrap_specific_neighborhoods(neighborhoods)
@@ -55,6 +55,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Chequea la salud de los selectores DOM del scrapper de ZonaProp.",
     )
+    parser.add_argument(
+        "--operation",
+        choices=["rent", "sale", "both"],
+        default="rent",
+        help="Tipo de operación a scrapear: rent (alquiler), sale (venta) o both. Default: rent.",
+    )
     return parser
 
 
@@ -70,7 +76,13 @@ def main() -> None:
         export_departments_to_csv(args.export_csv)
         return
 
-    run_scraping(args.neighborhoods or None)
+    neighborhoods = args.neighborhoods or None
+    if args.operation == "both":
+        for operation in ("rent", "sale"):
+            logger.info(f"Scraping operation: {operation}")
+            run_scraping(neighborhoods, operation)
+    else:
+        run_scraping(neighborhoods, args.operation)
 
 
 if __name__ == "__main__":

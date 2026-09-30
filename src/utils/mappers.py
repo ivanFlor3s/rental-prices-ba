@@ -11,6 +11,7 @@ def map_department_to_model(dept: Department, source: str, neighborhood_id: int)
         title=dept.title,
         neighborhood_id=neighborhood_id,
         property_type=enum.PropertyType.DEPARTMENT,  # o algo derivado de la data si lo tienes
+        operation=dept.operation,
         rooms=dept.details.ambientes if dept.details else None,
         bedrooms=dept.details.bedrooms if dept.details else None,
         bathrooms=dept.details.bathrooms if dept.details else None,
@@ -42,6 +43,7 @@ def model_to_department(model: DepartmentModel) -> Department:
         price=float(model.price) if model.price is not None else 0,
         is_usd=(model.currency_price == enum.Currency.USD),
         location=model.neighborhood.name if model.neighborhood else "",
+        operation=model.operation or enum.OperationType.RENT,
         expenses=float(model.expenses) if model.expenses is not None else None,
         details=details
     )
